@@ -1,6 +1,5 @@
 import os
-from transformers import TrainingArguments
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 from .config import load_config
 from .data import load_training_data
 from .model import load_base_model_and_tokenizer, apply_lora
@@ -19,14 +18,14 @@ def train(config_path: str = "configs/qlora_config.yaml"):
     model = apply_lora(model, config.lora)
     model.print_trainable_parameters()
 
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=tc.output_dir,
         num_train_epochs=tc.num_train_epochs,
         per_device_train_batch_size=tc.per_device_train_batch_size,
         gradient_accumulation_steps=tc.gradient_accumulation_steps,
         learning_rate=tc.learning_rate,
         lr_scheduler_type=tc.lr_scheduler_type,
-        warmup_ratio=tc.warmup_ratio,
+        warmup_steps=100,
         save_steps=tc.save_steps,
         logging_steps=tc.logging_steps,
         bf16=tc.bf16,
@@ -34,14 +33,13 @@ def train(config_path: str = "configs/qlora_config.yaml"):
         optim=tc.optim,
         report_to="none",
         load_best_model_at_end=False,
+        max_length=tc.max_seq_length,
     )
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         train_dataset=dataset,
-        dataset_text_field="text",
-        max_seq_length=tc.max_seq_length,
         args=training_args,
     )
 

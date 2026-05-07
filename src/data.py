@@ -15,7 +15,6 @@ def load_training_data(config: TrainingConfig) -> Dataset:
         config.dataset_name,
         config.dataset_language,
         split="train",
-        trust_remote_code=True,
     )
 
     def process(sample):
@@ -23,4 +22,5 @@ def load_training_data(config: TrainingConfig) -> Dataset:
 
     dataset = dataset.map(process, remove_columns=dataset.column_names)
     dataset = dataset.filter(lambda x: len(x["text"]) > 0)
+    dataset = dataset.select(range(500))
     return dataset
