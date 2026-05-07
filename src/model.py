@@ -52,6 +52,7 @@ def load_trained_model(
 ):
     tokenizer = AutoTokenizer.from_pretrained(adapter_path)
     tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "right"
 
     base_model = AutoModelForCausalLM.from_pretrained(
         config.model_name,
