@@ -1,14 +1,8 @@
 # Design Spec: Python Code Completion with CodeLlama-7B + QLoRA
 
-**Date:** 2026-05-07  
-**Paper:** "Optimizing Python Code Completion with Parameter-Efficient Fine-Tuning"  
-**Status:** Approved
-
----
-
 ## Goal
 
-Replicate the paper's results by fine-tuning CodeLlama-7B with LoRA (rank=8) on CodeSearchNet Python and evaluating on HumanEval with exact pass@1, pass@5, pass@10 metrics. Training runs on Google Colab free tier (T4, 16GB VRAM), requiring QLoRA (4-bit quantization) to fit the model in memory.
+Fine-tuning CodeLlama-7B with LoRA (rank=8) on CodeSearchNet Python and evaluating on HumanEval with exact pass@1, pass@5, pass@10 metrics. Training runs on Google Colab free tier (T4, 16GB VRAM), requiring QLoRA (4-bit quantization) to fit the model in memory.
 
 ---
 
