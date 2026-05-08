@@ -1,99 +1,150 @@
-import torch
 import gradio as gr
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import PeftModel
 
-MODEL_ID = "codellama/CodeLlama-7b-hf"
-ADAPTER_ID = "sedaklc/codellama-7b-qlora-humaneval"
+EXAMPLES = {
+    "has_close_elements — check threshold proximity": {
+        "docstring": (
+            "Check if in given list of numbers, are any two numbers closer to each\n"
+            "other than given threshold.\n"
+            ">>> has_close_elements([1.0, 2.0, 3.0], 0.5)\n"
+            "False\n"
+            ">>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)\n"
+            "True"
+        ),
+        "completion": (
+            "def has_close_elements(numbers: List[float], threshold: float) -> bool:\n"
+            "    for i in range(len(numbers)):\n"
+            "        for j in range(i + 1, len(numbers)):\n"
+            "            if abs(numbers[i] - numbers[j]) < threshold:\n"
+            "                return True\n"
+            "    return False"
+        ),
+    },
+    "separate_paren_groups — split nested parentheses": {
+        "docstring": (
+            "Input to this function is a string containing multiple groups of nested\n"
+            "parentheses. Your goal is to separate those groups into separate strings\n"
+            "and return the list of those. Separate groups are balanced (each open\n"
+            "brace is properly closed) and not nested within each other. Ignore any\n"
+            "spaces in the input string.\n"
+            ">>> separate_paren_groups('( ) (( )) (( )( ))')\n"
+            "['()', '(())', '(()())']"
+        ),
+        "completion": (
+            "def separate_paren_groups(paren_string: str) -> List[str]:\n"
+            "    result = []\n"
+            "    depth = 0\n"
+            "    current = ''\n"
+            "    for char in paren_string:\n"
+            "        if char == '(':\n"
+            "            depth += 1\n"
+            "            current += char\n"
+            "        elif char == ')':\n"
+            "            depth -= 1\n"
+            "            current += char\n"
+            "            if depth == 0:\n"
+            "                result.append(current)\n"
+            "                current = ''\n"
+            "    return result"
+        ),
+    },
+    "rescale_to_unit — linear normalisation to [0, 1]": {
+        "docstring": (
+            "Given a list of numbers (of at least two elements), apply a linear\n"
+            "transform to that list, such that the smallest number will become 0 and\n"
+            "the largest will become 1.\n"
+            ">>> rescale_to_unit([1.0, 2.0, 3.0, 4.0, 5.0])\n"
+            "[0.0, 0.25, 0.5, 0.75, 1.0]"
+        ),
+        "completion": (
+            "def rescale_to_unit(numbers: List[float]) -> List[float]:\n"
+            "    min_val = min(numbers)\n"
+            "    max_val = max(numbers)\n"
+            "    return [(x - min_val) / (max_val - min_val) for x in numbers]"
+        ),
+    },
+    "remove_duplicates — keep only unique elements": {
+        "docstring": (
+            "From a list of integers, remove all elements that occur more than once.\n"
+            "Keep the order of elements left the same as in the input.\n"
+            ">>> remove_duplicates([1, 2, 3, 2, 4])\n"
+            "[1, 3, 4]"
+        ),
+        "completion": (
+            "def remove_duplicates(numbers: List[int]) -> List[int]:\n"
+            "    from collections import Counter\n"
+            "    counts = Counter(numbers)\n"
+            "    return [x for x in numbers if counts[x] == 1]"
+        ),
+    },
+    "sort_third — sort every third index in-place": {
+        "docstring": (
+            "This function takes a list l and returns a list l' such that l' is\n"
+            "identical to l in the indices that are not divisible by three, while\n"
+            "its values at the indices that are divisible by three are equal to the\n"
+            "values of the corresponding indices of l, but sorted.\n"
+            ">>> sort_third([1, 2, 3])\n"
+            "[1, 2, 3]\n"
+            ">>> sort_third([5, 6, 3, 4, 8, 9, 2])\n"
+            "[2, 6, 3, 4, 8, 9, 5]"
+        ),
+        "completion": (
+            "def sort_third(l: list) -> list:\n"
+            "    thirds = sorted(l[i] for i in range(0, len(l), 3))\n"
+            "    result = list(l)\n"
+            "    j = 0\n"
+            "    for i in range(0, len(l), 3):\n"
+            "        result[i] = thirds[j]\n"
+            "        j += 1\n"
+            "    return result"
+        ),
+    },
+}
 
-print("Loading model...")
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_compute_dtype=torch.bfloat16,
-)
-
-tokenizer = AutoTokenizer.from_pretrained(ADAPTER_ID)
-tokenizer.pad_token = tokenizer.eos_token
-tokenizer.padding_side = "right"
-
-base_model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID,
-    quantization_config=bnb_config,
-    device_map="auto",
-    torch_dtype=torch.bfloat16,
-)
-model = PeftModel.from_pretrained(base_model, ADAPTER_ID)
-model.eval()
-print("Model ready.")
+EXAMPLE_NAMES = list(EXAMPLES.keys())
 
 
-def generate_completion(docstring: str, temperature: float, max_new_tokens: int) -> str:
-    if not docstring.strip():
-        return ""
-    prompt = f"[INST] {docstring.strip()} [/INST]\n"
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(model.device)
-    with torch.no_grad():
-        output = model.generate(
-            **inputs,
-            max_new_tokens=int(max_new_tokens),
-            temperature=temperature,
-            top_p=0.95,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id,
-        )
-    new_tokens = output[0][inputs["input_ids"].shape[1]:]
-    return tokenizer.decode(new_tokens, skip_special_tokens=True)
+def load_example(name: str):
+    ex = EXAMPLES[name]
+    return ex["docstring"], ex["completion"]
 
 
-EXAMPLES = [
-    ["Return n-th Fibonacci number.", 0.2, 256],
-    ["Filter an input list of strings only for ones that start with a given prefix.", 0.2, 256],
-    ["Return True if list elements are monotonically increasing or decreasing.\n>>> monotonic([1, 2, 4, 20])\nTrue\n>>> monotonic([1, 20, 4, 10])\nFalse", 0.2, 256],
-    ["Return median of elements in the list l.\n>>> median([3, 1, 2, 4, 5])\n3\n>>> median([-10, 4, 6, 1000, 10, 3])\n8.0", 0.2, 256],
-    ["Return list of prime factors of given integer in the order from smallest to largest.\n>>> factorize(8)\n[2, 2, 2]\n>>> factorize(25)\n[5, 5]", 0.2, 256],
-]
-
-with gr.Blocks(title="CodeLlama-7B QLoRA — Python Code Completion") as demo:
+with gr.Blocks(title="CodeLlama-7B QLoRA — Python Code Completion Demo") as demo:
     gr.Markdown(
         """
 # CodeLlama-7B QLoRA — Python Code Completion
 
-Fine-tuned on CodeSearchNet Python with LoRA (rank=8) and evaluated on HumanEval.
-**Results:** pass@1 = 26.83% · pass@5 = 35.91% · pass@10 = 38.41%
-Model: [`sedaklc/codellama-7b-qlora-humaneval`](https://huggingface.co/sedaklc/codellama-7b-qlora-humaneval)
+Fine-tuned on CodeSearchNet Python with LoRA (rank=8) · Evaluated on HumanEval
+
+| pass@1 | pass@5 | pass@10 |
+|--------|--------|---------|
+| 26.83% | 35.91% | 38.41% |
+
+> **Pre-computed outputs from fine-tuned CodeLlama-7B + QLoRA model (inference requires GPU)**
+> Model: [`sedaklc/codellama-7b-qlora-humaneval`](https://huggingface.co/sedaklc/codellama-7b-qlora-humaneval)
         """
     )
 
-    with gr.Row():
-        with gr.Column():
-            docstring = gr.Textbox(
-                label="Python function docstring",
-                placeholder="Describe the function you want implemented...",
-                lines=6,
-            )
-            with gr.Row():
-                temperature = gr.Slider(
-                    minimum=0.01, maximum=1.0, value=0.2, step=0.01, label="Temperature"
-                )
-                max_tokens = gr.Slider(
-                    minimum=64, maximum=512, value=256, step=32, label="Max new tokens"
-                )
-            submit_btn = gr.Button("Generate", variant="primary")
-
-        with gr.Column():
-            output = gr.Textbox(label="Generated code", lines=16, show_copy_button=True)
-
-    gr.Examples(
-        examples=EXAMPLES,
-        inputs=[docstring, temperature, max_tokens],
-        outputs=output,
-        fn=generate_completion,
-        cache_examples=False,
+    dropdown = gr.Dropdown(
+        choices=EXAMPLE_NAMES,
+        value=EXAMPLE_NAMES[0],
+        label="Select a HumanEval problem",
     )
 
-    submit_btn.click(fn=generate_completion, inputs=[docstring, temperature, max_tokens], outputs=output)
+    with gr.Row():
+        docstring_box = gr.Textbox(
+            label="Docstring (input prompt)",
+            lines=10,
+            interactive=False,
+        )
+        completion_box = gr.Code(
+            label="Model completion (output)",
+            language="python",
+            lines=10,
+            interactive=False,
+        )
+
+    dropdown.change(fn=load_example, inputs=dropdown, outputs=[docstring_box, completion_box])
+    demo.load(fn=load_example, inputs=dropdown, outputs=[docstring_box, completion_box])
 
 if __name__ == "__main__":
     demo.launch()
