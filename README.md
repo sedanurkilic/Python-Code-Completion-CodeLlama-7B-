@@ -99,6 +99,11 @@ python scripts/run_evaluation.py --adapter_path ./outputs/final
 | pass@5 | 58.4% | 35.91% |
 | pass@10 | 66.1% | 38.41% |
 
+This project implements the methodology from:
+
+**"Optimizing Python Code Completion with Parameter-Efficient Fine-Tuning"**  
+[Read the paper](notebooks/Python_Code_Completion_Report.pdf)
+
 > **Note:** This replication trained on a 500-sample subset of CodeSearchNet Python due to Colab free tier T4 memory and time constraints. The paper trained on the full dataset with full-precision BF16 weights. The gap in pass@k scores is expected given the reduced training data and 4-bit quantization.
 
 ---
@@ -112,13 +117,4 @@ See `requirements.txt`. Key versions:
 - `bitsandbytes>=0.43.0`
 - `human-eval` (installed from OpenAI GitHub)
 
----
-
-## Citation
-
-```bibtex
-@article{optimizing-python-code-completion,
-  title={Optimizing Python Code Completion with Parameter-Efficient Fine-Tuning},
-  note={Paper replication with QLoRA adaptation for T4 GPU}
-}
 ```
