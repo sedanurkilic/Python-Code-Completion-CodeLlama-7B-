@@ -6,6 +6,13 @@ Runs on Google Colab free tier (T4, 16GB VRAM) using QLoRA 4-bit quantization.
 
 ---
 
+## Links
+
+- **Live demo:** [HuggingFace Space — codellama-code-completion](https://huggingface.co/spaces/sedaklc/codellama-code-completion)
+- **Fine-tuned adapter:** [sedaklc/codellama-7b-qlora-humaneval](https://huggingface.co/sedaklc/codellama-7b-qlora-humaneval)
+
+---
+
 ## Architecture
 
 ```
