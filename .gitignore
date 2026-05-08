@@ -1,6 +1,5 @@
 outputs/
 results/*.jsonl
-results/metrics.json
 __pycache__/
 *.pyc
 .env

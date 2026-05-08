@@ -76,18 +76,18 @@ python scripts/run_evaluation.py --adapter_path ./outputs/final
 
 ## Hyperparameters
 
-| Parameter | Value | Source |
-|-----------|-------|--------|
-| LoRA rank (r) | 8 | Paper |
-| LoRA alpha | 16 | Paper |
-| LoRA dropout | 0.1 | Paper |
-| Target modules | q_proj, v_proj | Paper |
-| Epochs | 3 | Paper |
-| Optimizer | AdamW | Paper |
-| Learning rate | 2e-4 | Standard QLoRA default |
-| Batch size (effective) | 16 | 4 × 4 grad accum |
-| Max seq length | 512 | T4 memory constraint |
-| Quantization | 4-bit NF4 + double quant | QLoRA adaptation |
+| Parameter | Value |
+|-----------|-------|
+| LoRA rank (r) | 8 |
+| LoRA alpha | 16 |
+| LoRA dropout | 0.1 |
+| Target modules | q_proj, v_proj |
+| Epochs | 3 |
+| Optimizer | AdamW |
+| Learning rate | 2e-4 |
+| Batch size (effective) | 16 |
+| Max seq length | 512 |
+| Quantization | 4-bit NF4 + double quant |
 
 ---
 
@@ -95,11 +95,11 @@ python scripts/run_evaluation.py --adapter_path ./outputs/final
 
 | Metric | Paper (BF16) | This Replication (QLoRA) |
 |--------|-------------|--------------------------|
-| pass@1 | — | — |
-| pass@5 | — | — |
-| pass@10 | — | — |
+| pass@1 | 37.8% | 26.83% |
+| pass@5 | 58.4% | 35.91% |
+| pass@10 | 66.1% | 38.41% |
 
-*Fill in after running evaluation. QLoRA results may differ slightly from full-precision paper results.*
+> **Note:** This replication trained on a 500-sample subset of CodeSearchNet Python due to Colab free tier T4 memory and time constraints. The paper trained on the full dataset with full-precision BF16 weights. The gap in pass@k scores is expected given the reduced training data and 4-bit quantization.
 
 ---
 
